@@ -18,7 +18,7 @@
  * Version information for the block_forum_report plugin.
  *
  * @package    block_forum_report
- * @copyright  2017 Eric Hagley & Takahiro Nakahara
+ * @copyright  2017 David Campbell, Eric Hagley & Takahiro Nakahara
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
