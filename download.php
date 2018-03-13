@@ -19,7 +19,7 @@ if($forumid){
 }
 require_capability('block/forum_report:view', $coursecontext, NULL, true, 'noviewdiscussionspermission', 'forum');
 
-$students = get_users_by_capability($coursecontext, 'mod/forum:replypost');
+$students = get_users_by_capability($coursecontext, 'mod/forum:viewdiscussion');
 
 $countries = get_string_manager()->get_list_of_countries();
 
@@ -52,7 +52,8 @@ foreach($students as $student){
             continue;
         }
     }
-
+    //Username
+    $studentdata[] = $student->username;
     //Name
     $studentdata[] = fullname($student);
 
@@ -118,7 +119,7 @@ foreach($students as $student){
 $csvexport = new \csv_export_writer();
 $filename = 'forum-report';
 $csvexport->set_filename($filename);
-$csvexport->add_data(array('Name','Country','Posts','Replies','Views','Word count','First post','Last post'));
+$csvexport->add_data(array('Username','Name','Country','Posts','Replies','Views','Word count','First post','Last post'));
 foreach($data as $line){
     $csvexport->add_data($line);
 }
