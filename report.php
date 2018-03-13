@@ -115,10 +115,10 @@ if(!$startnow){
     }
     
     if($forumid){
-        $students = get_users_by_capability($modcontext, 'mod/forum:replypost','',$orderbyname);
+        $students = get_users_by_capability($modcontext, 'mod/forum:viewdiscussion','',$orderbyname);
         $discussions = $DB->get_records('forum_discussions',array('forum'=>$forum->id));
     }else{
-        $students = get_users_by_capability($coursecontext, 'mod/forum:replypost','',$orderbyname);
+        $students = get_users_by_capability($coursecontext, 'mod/forum:viewdiscussion','',$orderbyname);
         $discussions = $DB->get_records('forum_discussions',array('course'=>$course->id));
     }
 
