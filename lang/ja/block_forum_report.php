@@ -32,6 +32,8 @@ $string['views'] = '閲覧回数';
 $string['wordcount'] = '単語数';
 $string['reportfilter'] = 'フィルタ';
 $string['showreport'] = 'レポートを表示';
+$string['reportstart'] = '開始';
+$string['reportend'] = '終了';
 
 //Reminder mail
 $string['remindsubject'] = '国際交流への参加を！';

@@ -4,12 +4,13 @@ require_once(dirname(__FILE__) . '/../../config.php');
 require_once($CFG->libdir . '/tablelib.php');
 require_once('reportlib.php');
 
-
 $startnow = optional_param('startnow',0, PARAM_INT);
 $forumid = optional_param('forum',0, PARAM_INT);
 $couresid = required_param('course', PARAM_INT);
 $groupid = optional_param('group', 0, PARAM_INT);
 $countryid = optional_param('country', '', PARAM_RAW);
+$start = optional_param('start', '', PARAM_RAW);
+$end = optional_param('end', '', PARAM_RAW);
 $tsort = optional_param('tsort', 0, PARAM_RAW);
 if(strpos($tsort,'name')!==FALSE){
     $orderbyname = $tsort;
@@ -18,24 +19,12 @@ if(strpos($tsort,'name')!==FALSE){
 }
 $params['course'] = $couresid;
 $course = $DB->get_record('course',array('id'=>$couresid));
+
 require_course_login($course);
 $coursecontext = context_course::instance($course->id);
 
 require_capability('block/forum_report:view', $coursecontext, NULL, true, 'noviewdiscussionspermission', 'forum');
 
-
-$strname = get_string('fullname');
-$strfirstname = get_string('firstname');
-$strlastname = get_string('lastname');
-$strcounrty = get_string('country');
-$strposts = get_string('posts');
-$strviews = get_string('views','block_forum_report');
-$strreplies = get_string('replies','block_forum_report');
-$strwordcount = get_string('wordcount','block_forum_report');
-$strfp = get_string('firstpost','block_forum_report');
-$strlp = get_string('lastpost','block_forum_report');
-$strsr = get_string('sendreminder','block_forum_report');
-$strcl = get_string('completereport');
 
 if($forumid){
     $params['forum'] = $forumid;
@@ -46,12 +35,12 @@ if($forumid){
     $PAGE->navbar->add($forum->name);
 }
 
-
 $countries = get_string_manager()->get_list_of_countries();
 
 $mform = new report_form();
 $fromform = $mform->get_data();
 $paramstr = '?course='.$course->id.'&forum='.$forumid;
+
 if($groupid){
     $params['group'] = $groupid;
     $groupfilter = $groupid;;
@@ -74,6 +63,28 @@ if($countryid){
 }else{
     $countryfilter = 0;
 }
+if(isset($fromform->starttime)){
+    $starttime = $fromform->starttime;
+    $params['start'] = $starttime;
+    $paramstr .= '&start='.$starttime;
+}elseif($start){
+    $starttime = $start;
+    $paramstr .= '&start='.$starttime;
+    $params['start'] = $starttime;
+}else{
+    $starttime = 0;
+}
+if(isset($fromform->endtime)){
+    $endtime = $fromform->endtime;
+    $params['end'] = $endtime;
+    $paramstr .= '&end='.$endtime;
+}elseif($end){
+    $endtime = $end;
+    $paramstr .= '&end='.$endtime;
+    $params['end'] = $endtime;
+}else{
+    $endtime = 0;
+}
 
 
 $PAGE->set_pagelayout('incourse');
@@ -87,6 +98,18 @@ $PAGE->set_heading($course->fullname);
 echo $OUTPUT->header();
 $mform->display();
 
+$strname = get_string('fullname');
+$strfirstname = get_string('firstname');
+$strlastname = get_string('lastname');
+$strcounrty = get_string('country');
+$strposts = get_string('posts');
+$strviews = get_string('views','block_forum_report');
+$strreplies = get_string('replies','block_forum_report');
+$strwordcount = get_string('wordcount','block_forum_report');
+$strfp = get_string('firstpost','block_forum_report');
+$strlp = get_string('lastpost','block_forum_report');
+$strsr = get_string('sendreminder','block_forum_report');
+$strcl = get_string('completereport');
 if(!$startnow){
     echo '<br>';
     echo '<a href="download.php'.$paramstr.'"><button class="btn btn-primary ">'.get_string('download').'</button></a><br><br>';
@@ -114,6 +137,9 @@ if(!$startnow){
         $orderbyname = '';
     }
     
+		//get_enrolled_users(context $context, $withcapability = '', $groupid = 0, $userfields = 'u.*', $orderby = '', $limitfrom = 0, $limitnum = 0)に変えること
+    //$students = get_enrolled_users($coursecontext);
+    //var_dump($students);
     if($forumid){
         $students = get_users_by_capability($modcontext, 'mod/forum:viewdiscussion','',$orderbyname);
         $discussions = $DB->get_records('forum_discussions',array('forum'=>$forum->id));
@@ -154,6 +180,13 @@ if(!$startnow){
 
         //Posts
         $postsql = 'SELECT * FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray.' AND parent=0';
+        if($starttime){
+            $postsql = $postsql.' AND created>'.$starttime;
+        }
+        if($endtime){
+            $postsql = $postsql.' AND created<'.$endtime;
+        }
+        
         $posts = $DB->get_records_sql($postsql);
         $studentdata->posts = count($posts);
 
@@ -175,6 +208,12 @@ if(!$startnow){
         //Word count
         if($posts || $replies){
             $allpostsql = 'SELECT * FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
+            if($starttime){
+                $allpostsql = $allpostsql.' AND created>'.$starttime;
+            }
+            if($endtime){
+                $allpostsql = $allpostsql.' AND created<'.$endtime;
+            }
             if($allposts = $DB->get_records_sql($allpostsql)){
                 $wordcount = 0;
                 foreach($allposts as $post){
@@ -191,12 +230,24 @@ if(!$startnow){
         $firstpostsql = 'SELECT MIN(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
         if($posts || $replies){
             $firstpostsql = 'SELECT MIN(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
+            if($starttime){
+                $firstpostsql = $firstpostsql.' AND created>'.$starttime;
+            }
+            if($endtime){
+                $firstpostsql = $firstpostsql.' AND created<'.$endtime;
+            }
             $firstpost = $DB->get_record_sql($firstpostsql);
             $minstr = 'min(created)'; //
             $firstpostdate = userdate($firstpost->$minstr);
             $studentdata->firstpost = $firstpostdate;
 
             $lastpostsql = 'SELECT MAX(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
+            if($starttime){
+                $lastpostsql = $lastpostsql.' AND created>'.$starttime;
+            }
+            if($endtime){
+                $lastpostsql = $lastpostsql.' AND created<'.$endtime;
+            }
             $lastpost = $DB->get_record_sql($lastpostsql);
             $maxstr = 'max(created)'; //
             $lastpostdate = userdate($lastpost->$maxstr);

@@ -33,6 +33,11 @@ class report_form extends moodleform {
         $mform->addElement('hidden', 'course', $COURSE->id);
         $mform->setType('course',PARAM_INT);
         
+        // Open and close dates.
+        $mform->addElement('date_time_selector', 'starttime', get_string('reportstart', 'block_forum_report'));
+
+        $mform->addElement('date_time_selector', 'endtime', get_string('reportend', 'block_forum_report'));
+        
         $mform->addElement('submit', 'changefilter', get_string('showreport','block_forum_report'));
     }
 }

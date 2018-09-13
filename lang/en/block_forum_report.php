@@ -33,6 +33,8 @@ $string['views'] = 'Views';
 $string['wordcount'] = 'Word count';
 $string['reportfilter'] = 'Report filter';
 $string['showreport'] = 'Show report';
+$string['reportstart'] = 'Start';
+$string['reportend'] = 'End';
 
 //Reminder mail
 $string['remindsubject'] = 'Reminder to participate in the international exchange';
