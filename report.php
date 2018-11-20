@@ -6,7 +6,7 @@ require_once('reportlib.php');
 
 $startnow = optional_param('startnow',0, PARAM_INT);
 $forumid = optional_param('forum',0, PARAM_INT);
-$couresid = required_param('course', PARAM_INT);
+$courseid = required_param('course', PARAM_INT);
 $groupid = optional_param('group', 0, PARAM_INT);
 $countryid = optional_param('country', '', PARAM_RAW);
 $start = optional_param('start', '', PARAM_RAW);
@@ -17,8 +17,8 @@ if(strpos($tsort,'name')!==FALSE){
 }else{
     $orderbyname = '';
 }
-$params['course'] = $couresid;
-$course = $DB->get_record('course',array('id'=>$couresid));
+$params['course'] = $courseid;
+$course = $DB->get_record('course',array('id'=>$courseid));
 
 require_course_login($course);
 $coursecontext = context_course::instance($course->id);
@@ -110,6 +110,8 @@ $strfp = get_string('firstpost','block_forum_report');
 $strlp = get_string('lastpost','block_forum_report');
 $strsr = get_string('sendreminder','block_forum_report');
 $strcl = get_string('completereport');
+$strinstituion = get_string('institution');
+$strgroup = get_string('group');
 if(!$startnow){
     echo '<br>';
     echo '<a href="download.php'.$paramstr.'"><button class="btn btn-primary ">'.get_string('download').'</button></a><br><br>';
@@ -119,8 +121,8 @@ if(!$startnow){
     //$table->head = array($strname,$strcounrty,$strposts,$strreplies,$strwordcount,$strviews,$strfp,$strlp,$strsr,$strcl);
     //$table->define_align = array ("center","center","center","center","center","center","center","center","center","center");
     $table->define_baseurl($PAGE->url);
-    $table->define_columns(array('fullname', 'country', 'posts', 'replies','wordcount', 'views','firstpost','lastpost','action'));
-    $table->define_headers(array($strname,$strcounrty,$strposts,$strreplies,$strwordcount,$strviews,$strfp,$strlp,''));
+    $table->define_columns(array('fullname','group', 'country', 'institution', 'posts', 'replies','wordcount', 'views','lastpost','action'));
+    $table->define_headers(array($strname,$strgroup,$strcounrty,$strinstituion,$strposts,$strreplies,$strwordcount,$strviews,$strlp,''));
     $table->sortable(true);
     $table->set_attribute('class', 'admintable generaltable');
     $table->setup();
@@ -163,9 +165,14 @@ if(!$startnow){
             continue;
         }
 
+        $studentgroups = groups_get_all_groups($course->id, $student->id);
+        
+        foreach($studentgroups as $studentgroup){
+            $tempgroups[] = $studentgroup->name;
+        }
+        $studentdata->group = implode(',',$tempgroups);
+        $ingroups = array_keys($studentgroups);
         if($groupfilter){
-            $studentgroup = groups_get_all_groups($course->id, $student->id);
-            $ingroups = array_keys($studentgroup);
             if(!in_array($groupfilter,$ingroups)){
                 continue;
             }
@@ -177,6 +184,9 @@ if(!$startnow){
 
         //Countryfullname($student);
         $studentdata->country = @$countries[$student->country];
+        
+        //Instituion
+        $studentdata->institution = $student->institution;
 
         //Posts
         $postsql = 'SELECT * FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray.' AND parent=0';
@@ -192,17 +202,31 @@ if(!$startnow){
 
         //Replies
         $repsql = 'SELECT * FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray.' AND parent>0';
+        if($starttime){
+            $repsql = $repsql.' AND created>'.$starttime;
+        }
+        if($endtime){
+            $repsql = $repsql.' AND created<'.$endtime;
+        }
         $replies = $DB->get_records_sql($repsql);
         $studentdata->replies = count($replies);
 
         //View
         $logtable = 'logstore_standard_log';
-        $eventname = '\mod_forum\event\discussion_viewed';
+        $eventname = '\\\\mod_forum\\\\event\\\\discussion_viewed';
         if($forumid){
-            $views = $DB->get_records($logtable,array('userid'=>$student->id,'contextinstanceid'=>$cm->id,'contextlevel'=>CONTEXT_MODULE,'eventname'=>$eventname));
+            $viewsql = "SELECT * FROM {logstore_standard_log} WHERE userid=$student->id AND contextinstanceid=$cm->id AND contextlevel=".CONTEXT_MODULE." AND eventname='$eventname'";
         }else{
-            $views = $DB->get_records($logtable,array('userid'=>$student->id,'courseid'=>$couresid,'eventname'=>$eventname));
+            $views = $DB->get_records($logtable,array('userid'=>$student->id,'courseid'=>$courseid,'eventname'=>$eventname));
+            $viewsql = "SELECT * FROM {logstore_standard_log} WHERE userid=$student->id AND courseid=$courseid AND eventname='$eventname'";
         }
+        if($starttime){
+            $viewsql = $viewsql.' AND timecreated>'.$starttime;
+        }
+        if($endtime){
+            $viewsql = $viewsql.' AND timecreated<'.$endtime;
+        }
+        $views = $DB->get_records_sql($viewsql);
         $studentdata->views = count($views);
 
         //Word count
@@ -229,6 +253,8 @@ if(!$startnow){
         //First post & Last post
         $firstpostsql = 'SELECT MIN(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
         if($posts || $replies){
+            
+            /* Delete firstpost
             $firstpostsql = 'SELECT MIN(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
             if($starttime){
                 $firstpostsql = $firstpostsql.' AND created>'.$starttime;
@@ -240,6 +266,7 @@ if(!$startnow){
             $minstr = 'min(created)'; //
             $firstpostdate = userdate($firstpost->$minstr);
             $studentdata->firstpost = $firstpostdate;
+            */
 
             $lastpostsql = 'SELECT MAX(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
             if($starttime){
@@ -253,7 +280,7 @@ if(!$startnow){
             $lastpostdate = userdate($lastpost->$maxstr);
             $studentdata->lastpost = $lastpostdate;
         }else{
-            $studentdata->firstpost = '-';
+            //$studentdata->firstpost = '-';
             $studentdata->lastpost = '-';
         }
         $data[] = $studentdata;
@@ -271,10 +298,10 @@ if(!$startnow){
         $compurl = $CFG->wwwroot.'/report/outline/user.php?id='.$row->id.'&course='.$course->id.'&mode=complete';
         $complink = '<a href="'.$compurl.'"><span class="icon-profile" title="Complete reports"></span></a>';
         //$table->data[] = array($row->name,$row->country,$row->posts,$row->replies,$row->wordcount,$row->views,$row->firstpost,$row->lastpost,$sendreminder,$complink);
-        $trdata = array($row->name,$row->country,$row->posts,$row->replies,$row->wordcount,$row->views,$row->firstpost,$row->lastpost,$sendreminder.$complink);
+        $trdata = array($row->name,$row->group,$row->country,$row->institution,$row->posts,$row->replies,$row->wordcount,$row->views,$row->lastpost,$sendreminder.$complink);
         $table->add_data($trdata);
     }
-    echo '<input type="hidden" name="course" id="courseid" value="'.$couresid.'">';
+    echo '<input type="hidden" name="course" id="courseid" value="'.$courseid.'">';
     if($forumid){
         echo '<input type="hidden" name="forum" id="forumid" value="'.$forumid.'">';
     }

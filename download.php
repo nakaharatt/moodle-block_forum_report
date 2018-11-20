@@ -5,10 +5,12 @@ require_once('reportlib.php');
 require_once($CFG->libdir . '/csvlib.class.php');
 
 $forumid = optional_param('forum',0, PARAM_INT);
-$couresid = required_param('course', PARAM_INT);
+$courseid = required_param('course', PARAM_INT);
 $countryfilter = optional_param('country', 0, PARAM_RAW);
 $groupfilter = optional_param('group', 0, PARAM_INT);
-$course = $DB->get_record('course',array('id'=>$couresid));
+$start = optional_param('start', '', PARAM_RAW);
+$end = optional_param('end', '', PARAM_RAW);
+$course = $DB->get_record('course',array('id'=>$courseid));
 require_course_login($course);
 $coursecontext = context_course::instance($course->id);
 
@@ -23,6 +25,20 @@ $students = get_users_by_capability($coursecontext, 'mod/forum:viewdiscussion');
 
 $countries = get_string_manager()->get_list_of_countries();
 
+if(isset($fromform->starttime)){
+    $starttime = $fromform->starttime;
+}elseif($start){
+    $starttime = $start;
+}else{
+    $starttime = 0;
+}
+if(isset($fromform->endtime)){
+    $endtime = $fromform->endtime;
+}elseif($end){
+    $endtime = $end;
+}else{
+    $endtime = 0;
+}
 
 if($forumid){
     $discussions = $DB->get_records('forum_discussions',array('forum'=>$forum->id));
@@ -56,33 +72,69 @@ foreach($students as $student){
     $studentdata[] = $student->username;
     //Name
     $studentdata[] = fullname($student);
+    
+    //Group
+    $studentgroups = groups_get_all_groups($course->id, $student->id);
+    foreach($studentgroups as $studentgroup){
+        $tempgroups[] = $studentgroup->name;
+    }
+    $studentdata[] = implode(',',$tempgroups);
 
     //Countryfullname($student);
     $studentdata[] = @$countries[$student->country];
 
+    //Instituion
+    $studentdata[] = $student->institution;
+    
     //Posts
     $postsql = 'SELECT * FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray.' AND parent=0';
+    if($starttime){
+        $postsql = $postsql.' AND created>'.$starttime;
+    }
+    if($endtime){
+        $postsql = $postsql.' AND created<'.$endtime;
+    }
     $posts = $DB->get_records_sql($postsql);
     $studentdata[] = count($posts);
 
     //Replies
     $repsql = 'SELECT * FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray.' AND parent>0';
+    if($starttime){
+        $repsql = $repsql.' AND created>'.$starttime;
+    }
+    if($endtime){
+        $repsql = $repsql.' AND created<'.$endtime;
+    }
     $replies = $DB->get_records_sql($repsql);
     $studentdata[] = count($replies);
 
     //View
     $logtable = 'logstore_standard_log';
-    $eventname = '\mod_forum\event\discussion_viewed';
+    $eventname = '\\\\mod_forum\\\\event\\\\discussion_viewed';
     if($forumid){
-        $views = $DB->get_records($logtable,array('userid'=>$student->id,'contextinstanceid'=>$cm->id,'contextlevel'=>CONTEXT_MODULE,'eventname'=>$eventname));
+        $viewsql = "SELECT * FROM {logstore_standard_log} WHERE userid=$student->id AND contextinstanceid=$cm->id AND contextlevel=".CONTEXT_MODULE." AND eventname='$eventname'";
     }else{
-        $views = $DB->get_records($logtable,array('userid'=>$student->id,'courseid'=>$couresid,'eventname'=>$eventname));
+        $views = $DB->get_records($logtable,array('userid'=>$student->id,'courseid'=>$courseid,'eventname'=>$eventname));
+        $viewsql = "SELECT * FROM {logstore_standard_log} WHERE userid=$student->id AND courseid=$courseid AND eventname='$eventname'";
     }
+    if($starttime){
+        $viewsql = $viewsql.' AND timecreated>'.$starttime;
+    }
+    if($endtime){
+        $viewsql = $viewsql.' AND timecreated<'.$endtime;
+    }
+    $views = $DB->get_records_sql($viewsql);
     $studentdata[] = count($views);
 
     //Word count
     if($posts || $replies){
         $allpostsql = 'SELECT * FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
+        if($starttime){
+            $allpostsql = $allpostsql.' AND created>'.$starttime;
+        }
+        if($endtime){
+            $allpostsql = $allpostsql.' AND created<'.$endtime;
+        }
         if($allposts = $DB->get_records_sql($allpostsql)){
             $wordcount = 0;
             foreach($allposts as $post){
@@ -96,21 +148,19 @@ foreach($students as $student){
     $studentdata[] = $wordcount;
 
     //First post & Last post
-    $firstpostsql = 'SELECT MIN(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
     if($posts || $replies){
-        $firstpostsql = 'SELECT MIN(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
-        $firstpost = $DB->get_record_sql($firstpostsql);
-        $minstr = 'min(created)'; //
-        $firstpostdate = userdate($firstpost->$minstr);
-        $studentdata[] = $firstpostdate;
-
         $lastpostsql = 'SELECT MAX(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
+        if($starttime){
+            $lastpostsql = $lastpostsql.' AND created>'.$starttime;
+        }
+        if($endtime){
+            $lastpostsql = $lastpostsql.' AND created<'.$endtime;
+        }
         $lastpost = $DB->get_record_sql($lastpostsql);
         $maxstr = 'max(created)'; //
         $lastpostdate = userdate($lastpost->$maxstr);
         $studentdata[] = $lastpostdate;
     }else{
-        $studentdata[] = '-';
         $studentdata[] = '-';
     }
     $data[] = $studentdata;
@@ -119,7 +169,7 @@ foreach($students as $student){
 $csvexport = new \csv_export_writer();
 $filename = 'forum-report';
 $csvexport->set_filename($filename);
-$csvexport->add_data(array('Username','Name','Country','Posts','Replies','Views','Word count','First post','Last post'));
+$csvexport->add_data(array('Username','Name','Group','Country','Instituion','Posts','Replies','Views','Word count','Last post'));
 foreach($data as $line){
     $csvexport->add_data($line);
 }
