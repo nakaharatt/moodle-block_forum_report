@@ -167,7 +167,7 @@ if(!$startnow){
 
         $studentgroups = groups_get_all_groups($course->id, $student->id);
         
-	$tempgroups = "";
+	$tempgroups = array();
         foreach($studentgroups as $studentgroup){
             $tempgroups[] = $studentgroup->name;
         }
