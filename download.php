@@ -75,6 +75,7 @@ foreach($students as $student){
     
     //Group
     $studentgroups = groups_get_all_groups($course->id, $student->id);
+    $tempgroups = array();
     foreach($studentgroups as $studentgroup){
         $tempgroups[] = $studentgroup->name;
     }
