@@ -60,27 +60,31 @@ foreach($students as $student){
     if($countryfilter && $countryfilter != $student->country){
         continue;
     }
-
+    
+    //Check to join group
+    $studentgroups = groups_get_all_groups($course->id, $student->id);
+    $ingroups = array_keys($studentgroups);
     if($groupfilter){
-        $studentgroup = groups_get_all_groups($course->id, $student->id);
-        $ingroups = array_keys($studentgroup);
         if(!in_array($groupfilter,$ingroups)){
             continue;
         }
     }
+    
     //Username
     $studentdata[] = $student->username;
     //Name
     $studentdata[] = fullname($student);
-    
     //Group
-    $studentgroups = groups_get_all_groups($course->id, $student->id);
     $tempgroups = array();
-    foreach($studentgroups as $studentgroup){
-        $tempgroups[] = $studentgroup->name;
+    if($groupfilter){
+        $studentdata[] = $studentgroups[$groupfilter]->name;
+    }else{
+        $studentdata[]="";
+        foreach($studentgroups as $studentgroup){
+            $tempgroups[] = $studentgroup->name;
+        }
+        if($tempgroups) $studentdata[] = implode(',',$tempgroups);
     }
-    $studentdata[] = implode(',',$tempgroups);
-
     //Countryfullname($student);
     $studentdata[] = @$countries[$student->country];
 

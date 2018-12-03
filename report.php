@@ -45,12 +45,18 @@ if($groupid){
     $params['group'] = $groupid;
     $groupfilter = $groupid;;
     $paramstr .= '&group='.$groupfilter;
+    $groupname = groups_get_all_groups($course->id)[$groupid]->name;
+/*
 }elseif(isset($fromform->group)){
     $groupfilter = $fromform->group;
     $paramstr .= '&group='.$groupfilter;
     $params['group'] = $groupfilter;
+    echo $groupfilter
+    $groupname = groups_get_all_groups($course->id)[$groupfilter]->name;
+*/
 }else{
     $groupfilter = 0;
+    $groupname = "";
 }
 if($countryid){
     $params['country'] = $countryid;
@@ -139,7 +145,7 @@ if(!$startnow){
         $orderbyname = '';
     }
     
-		//get_enrolled_users(context $context, $withcapability = '', $groupid = 0, $userfields = 'u.*', $orderby = '', $limitfrom = 0, $limitnum = 0)に変えること
+    //get_enrolled_users(context $context, $withcapability = '', $groupid = 0, $userfields = 'u.*', $orderby = '', $limitfrom = 0, $limitnum = 0)に変えること
     //$students = get_enrolled_users($coursecontext);
     //var_dump($students);
     if($forumid){
@@ -165,20 +171,25 @@ if(!$startnow){
             continue;
         }
 
+        //Group
         $studentgroups = groups_get_all_groups($course->id, $student->id);
-        
-	$tempgroups = array();
-	$studentdata->group ="";
-        foreach($studentgroups as $studentgroup){
-            $tempgroups[] = $studentgroup->name;
+        $tempgroups = array();
+        if($groupname){
+            $studentdata->group = $groupname;
+        }else{
+            $studentdata->group ="";
+            foreach($studentgroups as $studentgroup){
+                $tempgroups[] = $studentgroup->name;
+            }
+            if($tempgroups) $studentdata->group = implode(',',$tempgroups);
         }
-        if($tempgroups) $studentdata->group = implode(',',$tempgroups);
         $ingroups = array_keys($studentgroups);
         if($groupfilter){
             if(!in_array($groupfilter,$ingroups)){
                 continue;
             }
         }
+        
         $studentdata->id = $student->id;
 
         //Name
