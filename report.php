@@ -305,11 +305,11 @@ if(!$startnow){
     foreach($data as $row){
         //Notification
         //$output = $OUTPUT->pix_icon('t/subscribed', get_string('sendreminder', 'block_forum_report'), 'mod_forum');
-        $output = '<span class="icon-envelop" title="Send reminder"></span>';
+        $output = '<span class="forumreporticon-envelop" title="Send reminder"></span>';
         $sendreminder = '<a href="#" onclick="sendreminder('.$row->id.')">'.$output.'</a>';
         //message_sendを別phpで発火させる発火させる
         $compurl = $CFG->wwwroot.'/report/outline/user.php?id='.$row->id.'&course='.$course->id.'&mode=complete';
-        $complink = '<a href="'.$compurl.'"><span class="icon-profile" title="Complete reports"></span></a>';
+        $complink = '<a href="'.$compurl.'"><span class="forumreporticon-profile" title="Complete reports"></span></a>';
         //$table->data[] = array($row->name,$row->country,$row->posts,$row->replies,$row->wordcount,$row->views,$row->firstpost,$row->lastpost,$sendreminder,$complink);
         $trdata = array($row->name,$row->group,$row->country,$row->institution,$row->posts,$row->replies,$row->wordcount,$row->views,$row->lastpost,$sendreminder.$complink);
         $table->add_data($trdata);
