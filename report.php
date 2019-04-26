@@ -127,8 +127,8 @@ if(!$startnow){
     //$table->head = array($strname,$strcounrty,$strposts,$strreplies,$strwordcount,$strviews,$strfp,$strlp,$strsr,$strcl);
     //$table->define_align = array ("center","center","center","center","center","center","center","center","center","center");
     $table->define_baseurl($PAGE->url);
-    $table->define_columns(array('fullname','group', 'country', 'institution', 'posts', 'replies','wordcount', 'views','lastpost','action'));
-    $table->define_headers(array($strname,$strgroup,$strcounrty,$strinstituion,$strposts,$strreplies,$strwordcount,$strviews,$strlp,''));
+    $table->define_columns(array('fullname','group', 'country', 'institution', 'posts', 'replies','wordcount', 'views','firstpost','lastpost','action'));
+    $table->define_headers(array($strname,$strgroup,$strcounrty,$strinstituion,$strposts,$strreplies,$strwordcount,$strviews,$strfp,$strlp,''));
     $table->sortable(true);
     $table->set_attribute('class', 'admintable generaltable');
     $table->setup();
@@ -267,7 +267,6 @@ if(!$startnow){
         $firstpostsql = 'SELECT MIN(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
         if($posts || $replies){
             
-            /* Delete firstpost
             $firstpostsql = 'SELECT MIN(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
             if($starttime){
                 $firstpostsql = $firstpostsql.' AND created>'.$starttime;
@@ -279,7 +278,7 @@ if(!$startnow){
             $minstr = 'min(created)'; //
             $firstpostdate = userdate($firstpost->$minstr);
             $studentdata->firstpost = $firstpostdate;
-            */
+            
 
             $lastpostsql = 'SELECT MAX(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
             if($starttime){
@@ -293,7 +292,7 @@ if(!$startnow){
             $lastpostdate = userdate($lastpost->$maxstr);
             $studentdata->lastpost = $lastpostdate;
         }else{
-            //$studentdata->firstpost = '-';
+            $studentdata->firstpost = '-';
             $studentdata->lastpost = '-';
         }
         $data[] = $studentdata;
@@ -305,13 +304,13 @@ if(!$startnow){
     foreach($data as $row){
         //Notification
         //$output = $OUTPUT->pix_icon('t/subscribed', get_string('sendreminder', 'block_forum_report'), 'mod_forum');
-        $output = '<span class="forumreporticon-envelop" title="Send reminder"></span>';
+        $output = '<span class="icon-envelop" title="Send reminder"></span>';
         $sendreminder = '<a href="#" onclick="sendreminder('.$row->id.')">'.$output.'</a>';
         //message_sendを別phpで発火させる発火させる
         $compurl = $CFG->wwwroot.'/report/outline/user.php?id='.$row->id.'&course='.$course->id.'&mode=complete';
-        $complink = '<a href="'.$compurl.'"><span class="forumreporticon-profile" title="Complete reports"></span></a>';
+        $complink = '<a href="'.$compurl.'"><span class="icon-profile" title="Complete reports"></span></a>';
         //$table->data[] = array($row->name,$row->country,$row->posts,$row->replies,$row->wordcount,$row->views,$row->firstpost,$row->lastpost,$sendreminder,$complink);
-        $trdata = array($row->name,$row->group,$row->country,$row->institution,$row->posts,$row->replies,$row->wordcount,$row->views,$row->lastpost,$sendreminder.$complink);
+        $trdata = array($row->name,$row->group,$row->country,$row->institution,$row->posts,$row->replies,$row->wordcount,$row->views,$row->firstpost,$row->lastpost,$sendreminder.$complink);
         $table->add_data($trdata);
     }
     echo '<input type="hidden" name="course" id="courseid" value="'.$courseid.'">';

@@ -154,6 +154,18 @@ foreach($students as $student){
 
     //First post & Last post
     if($posts || $replies){
+        $firstpostsql = 'SELECT MIN(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
+        if($starttime){
+            $firstpostsql = $firstpostsql.' AND created>'.$starttime;
+        }
+        if($endtime){
+            $firstpostsql = $firstpostsql.' AND created<'.$endtime;
+        }
+        $firstpost = $DB->get_record_sql($firstpostsql);
+        $minstr = 'min(created)'; //
+        $firstpostdate = userdate($firstpost->$minstr);
+        $studentdata[] = $firstpostdate;
+        
         $lastpostsql = 'SELECT MAX(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
         if($starttime){
             $lastpostsql = $lastpostsql.' AND created>'.$starttime;
@@ -167,6 +179,7 @@ foreach($students as $student){
         $studentdata[] = $lastpostdate;
     }else{
         $studentdata[] = '-';
+        $studentdata[] = '-';
     }
     $data[] = $studentdata;
 }
@@ -174,7 +187,7 @@ foreach($students as $student){
 $csvexport = new \csv_export_writer();
 $filename = 'forum-report';
 $csvexport->set_filename($filename);
-$csvexport->add_data(array('Username','Name','Group','Country','Instituion','Posts','Replies','Views','Word count','Last post'));
+$csvexport->add_data(array('Username','Name','Group','Country','Instituion','Posts','Replies','Views','Word count','First post','Last post'));
 foreach($data as $line){
     $csvexport->add_data($line);
 }
