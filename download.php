@@ -76,15 +76,10 @@ foreach($students as $student){
     $studentdata[] = fullname($student);
     //Group
     $tempgroups = array();
-    if($groupfilter){
-        $studentdata[] = $studentgroups[$groupfilter]->name;
-    }else{
-        $studentdata[]="";
-        foreach($studentgroups as $studentgroup){
-            $tempgroups[] = $studentgroup->name;
-        }
-        if($tempgroups) $studentdata[] = implode(',',$tempgroups);
+    foreach($studentgroups as $studentgroup){
+        $tempgroups[] = $studentgroup->name;
     }
+    if($tempgroups) $studentdata[] = implode(',',$tempgroups);
     //Countryfullname($student);
     $studentdata[] = @$countries[$student->country];
 
