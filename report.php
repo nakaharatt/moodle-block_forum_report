@@ -174,15 +174,11 @@ if(!$startnow){
         //Group
         $studentgroups = groups_get_all_groups($course->id, $student->id);
         $tempgroups = array();
-        if($groupname){
-            $studentdata->group = $groupname;
-        }else{
-            $studentdata->group ="";
-            foreach($studentgroups as $studentgroup){
-                $tempgroups[] = $studentgroup->name;
-            }
-            if($tempgroups) $studentdata->group = implode(',',$tempgroups);
+        $studentdata->group ="";
+        foreach($studentgroups as $studentgroup){
+            $tempgroups[] = $studentgroup->name;
         }
+        if($tempgroups) $studentdata->group = implode(',',$tempgroups);
         $ingroups = array_keys($studentgroups);
         if($groupfilter){
             if(!in_array($groupfilter,$ingroups)){
