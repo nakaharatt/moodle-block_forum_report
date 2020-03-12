@@ -1,5 +1,7 @@
 # moodle-block_forum_report
 
+* This feature has been merged into Moodle. It played a major role, but we still have a little development.
+
 ## 1. Install
 
 1) Get the code using git by running the following command in the top level folder of your Moodle install:
