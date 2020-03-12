@@ -118,6 +118,7 @@ $strsr = get_string('sendreminder','block_forum_report');
 $strcl = get_string('completereport');
 $strinstituion = get_string('institution');
 $strgroup = get_string('group');
+$strmultimedia = get_string('multimedia','block_forum_report');
 if(!$startnow){
     echo '<br>';
     echo '<a href="download.php'.$paramstr.'"><button class="btn btn-primary ">'.get_string('download').'</button></a><br><br>';
@@ -127,8 +128,8 @@ if(!$startnow){
     //$table->head = array($strname,$strcounrty,$strposts,$strreplies,$strwordcount,$strviews,$strfp,$strlp,$strsr,$strcl);
     //$table->define_align = array ("center","center","center","center","center","center","center","center","center","center");
     $table->define_baseurl($PAGE->url);
-    $table->define_columns(array('fullname','group', 'country', 'institution', 'posts', 'replies','wordcount', 'views','firstpost','lastpost','action'));
-    $table->define_headers(array($strname,$strgroup,$strcounrty,$strinstituion,$strposts,$strreplies,$strwordcount,$strviews,$strfp,$strlp,''));
+    $table->define_columns(array('fullname','group', 'country', 'institution', 'posts', 'replies','wordcount', 'views','multimedia','firstpost','lastpost','action'));
+    $table->define_headers(array($strname,$strgroup,$strcounrty,$strinstituion,$strposts,$strreplies,$strwordcount,$strviews,$strmultimedia,$strfp,$strlp,''));
     $table->sortable(true);
     $table->collapsible(true);
     $table->set_attribute('class', 'admintable generaltable');
@@ -271,8 +272,7 @@ if(!$startnow){
             $multimedianum += get_mulutimedia_num($reply->message);
           }
         }
-        echo $multimedianum;
-      
+        $studentdata->multimedia = $multimedianum;
       
         //First post & Last post
         $firstpostsql = 'SELECT MIN(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
@@ -321,7 +321,7 @@ if(!$startnow){
         $compurl = $CFG->wwwroot.'/report/outline/user.php?id='.$row->id.'&course='.$course->id.'&mode=complete';
         $complink = '<a href="'.$compurl.'"><span class="forumreporticon-profile" title="Complete reports"></span></a>';
         //$table->data[] = array($row->name,$row->country,$row->posts,$row->replies,$row->wordcount,$row->views,$row->firstpost,$row->lastpost,$sendreminder,$complink);
-        $trdata = array($row->name,$row->group,$row->country,$row->institution,$row->posts,$row->replies,$row->wordcount,$row->views,$row->firstpost,$row->lastpost,$sendreminder.$complink);
+        $trdata = array($row->name,$row->group,$row->country,$row->institution,$row->posts,$row->replies,$row->wordcount,$row->views,$row->multimedia,$row->firstpost,$row->lastpost,$sendreminder.$complink);
         $table->add_data($trdata);
     }
     echo '<input type="hidden" name="course" id="courseid" value="'.$courseid.'">';

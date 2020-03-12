@@ -33,6 +33,7 @@ $string['views'] = 'Views';
 $string['wordcount'] = 'Word count';
 $string['reportfilter'] = 'Report filter';
 $string['showreport'] = 'Show report';
+$string['multimedia'] = 'Multimedia';
 $string['reportstart'] = 'Start';
 $string['reportend'] = 'End';
 
