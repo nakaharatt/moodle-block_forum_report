@@ -130,6 +130,7 @@ if(!$startnow){
     $table->define_columns(array('fullname','group', 'country', 'institution', 'posts', 'replies','wordcount', 'views','firstpost','lastpost','action'));
     $table->define_headers(array($strname,$strgroup,$strcounrty,$strinstituion,$strposts,$strreplies,$strwordcount,$strviews,$strfp,$strlp,''));
     $table->sortable(true);
+    $table->collapsible(true);
     $table->set_attribute('class', 'admintable generaltable');
     $table->setup();
     $sortby = $table->get_sort_columns();
@@ -258,7 +259,21 @@ if(!$startnow){
             $wordcount = 0;
         }
         $studentdata->wordcount = $wordcount;
-
+        
+        $multimedianum = 0;
+        if($posts){
+          foreach($posts as $pdata){
+            $multimedianum += get_mulutimedia_num($pdata->message);
+          }
+        }
+        if($replies){
+          foreach($replies as $reply){
+            $multimedianum += get_mulutimedia_num($reply->message);
+          }
+        }
+        echo $multimedianum;
+      
+      
         //First post & Last post
         $firstpostsql = 'SELECT MIN(created) FROM {forum_posts} WHERE userid='.$student->id.' AND discussion IN '.$discussionarray;
         if($posts || $replies){
