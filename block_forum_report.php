@@ -42,7 +42,7 @@ class block_forum_report extends block_base {
             $url = new moodle_url('/blocks/forum_report/report.php',$params);
             $addflat = navigation_node::create(get_string('pluginname', 'block_forum_report'), $url);
             $flat = new flat_navigation_node($addflat, 0);
-            $flat->set_showdivider(true);
+            $flat->set_showdivider(true, get_string('pluginname', 'block_forum_report'));
             $flat->key = 'forumreport';
             $flat->type = 0;
             if($this->page->flatnav->find($flat->key)) return;
